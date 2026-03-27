@@ -15,18 +15,16 @@ using System.Xml.Serialization;
 using System.Xml.Linq;
 using System.Diagnostics;
 
+using System.Drawing;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+
 namespace EmulatioStation_cfg_Editor
 {
     public partial class mainForm : Form
     {
         List<EsSystem> systems = new List<EsSystem>();
         EsSystem curSystem = new EsSystem();//define the system we are editing
-
-        Dictionary<string, launchConfig> DictLauncherConfig = new Dictionary<string, launchConfig>()
-        {
-            { "Dolphin",new launchConfig(){ fullScreen = true,fullScreenCmd = "--fullscreen",useBash = false,bash = "--batch --exec=\"%ROM_RAW%\"",libreteto = ""} },
-            { "retroarch",new launchConfig(){ fullScreen = true,fullScreenCmd = "--fullscreen",useBash = false,bash = "\"%ROM_RAW%\"",libreteto = ""} }
-        };
 
         struct launchConfig
         {
@@ -122,30 +120,28 @@ namespace EmulatioStation_cfg_Editor
                 addLauncherFile();
             }
 
-            comboBox1.DataSource = platformsID.Keys.ToList();
+            cmbx_platform.DataSource = platformsID.Keys.ToList();
             updateLauncherListView();
             loadSettings();
 
-            //update combobox launchers
-            comboBox2.DataSource = listBox1.Items;
         }
 
         private void btnDltLauncher_Click(object sender, EventArgs e)
         {
-            if (listBox1.SelectedItem != null)
+            if (lstbx_Launchers.SelectedItem != null)
             {
                 typeLauncher toDelete = Properties.Settings.Default.launchersList.Contains("");
                 Properties.Settings.Default.launchersList.Remove(toDelete);
                 Properties.Settings.Default.Save();
-               listBox1.Items.Remove(listBox1.SelectedItem);
+               lstbx_Launchers.Items.Remove(lstbx_Launchers.SelectedItem);
 
             }
         }
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            btnAddLauncher.Enabled = listBox1.SelectedItem != null;
-            btnDltLauncher.Enabled = listBox1.SelectedItem != null;
+            btnAddLauncher.Enabled = lstbx_Launchers.SelectedItem != null;
+            btnDltLauncher.Enabled = lstbx_Launchers.SelectedItem != null;
         }
 
         private void loadEsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -206,10 +202,10 @@ namespace EmulatioStation_cfg_Editor
 
         public void updateLauncherListView()
         {
-            listBox1.Items.Clear();
+            lstbx_Launchers.Items.Clear();
             foreach (var launcher in Properties.Settings.Default.launchersList)
             {
-                listBox1.Items.Add(launcher.Name);
+                lstbx_Launchers.Items.Add(launcher.Name);
                 if (launcher.Name.ToLower().StartsWith("retroarch"))
                 {
                     //update list libretetos
@@ -221,14 +217,17 @@ namespace EmulatioStation_cfg_Editor
                         strLibretrosLst.Add(Path.GetFileNameWithoutExtension(file));
                     }
                     strLibretrosLst.Insert(0, "NA");
-                    comboBox3.DataSource = strLibretrosLst;
+                    cmbx_libretro.DataSource = strLibretrosLst;
                 }
             }
+
+            //update combobox launchers
+            cmbx_launcher.DataSource = lstbx_Launchers.Items;
         }
 
         public void loadSettings()
         {
-            listBox2.Items.Clear();
+            lstbx_Systems.Items.Clear();
             systems = EmulationStationCfgReader.LoadSystems(Properties.Settings.Default.strSettingFilePath);
 
             foreach (var system in systems)
@@ -236,19 +235,21 @@ namespace EmulatioStation_cfg_Editor
                 if (!platformsID.Keys.Contains(system.Name))
                     continue;
 
-                listBox2.Items.Add(system.Name);
+                lstbx_Systems.Items.Add(system.Name);
             }
+
+            lstbx_Systems.SelectedIndex = 0;
         }
 
         public class EsSystem
         {
-            public string Name { get; set; }
-            public string FullName { get; set; }
-            public string Path { get; set; }
-            public string Extension { get; set; }
-            public string Command { get; set; }
-            public string Platform { get; set; }
-            public string Theme { get; set; }
+            public string Name { get; set; } = "unknown";
+            public string FullName { get; set; } = "";
+            public string Path { get; set; } = "";
+            public string Extensions { get; set; } = "";
+            public string Command { get; set; } = "";
+            public string Platform { get; set; } = "";
+            public string Theme { get; set; } = "";
         }
 
         public static class EmulationStationCfgReader
@@ -266,7 +267,7 @@ namespace EmulatioStation_cfg_Editor
                         Name = (string)x.Element("name") ?? "",
                         FullName = (string)x.Element("fullname") ?? "",
                         Path = (string)x.Element("path") ?? "",
-                        Extension = (string)x.Element("extension") ?? "",
+                        Extensions = (string)x.Element("extension") ?? "",
                         Command = (string)x.Element("command") ?? "",
                         Platform = (string)x.Element("platform") ?? "",
                         Theme = (string)x.Element("theme") ?? ""
@@ -277,44 +278,142 @@ namespace EmulatioStation_cfg_Editor
             }
         }
 
-        private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
+        private void lstbx_Systems_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (listBox2.SelectedIndex < 0)
+            errorProvider1.Clear();
+            btnUpdate.Enabled = false;
+
+            if (lstbx_Systems.SelectedIndex < 0)
                 return;
-            string selectedName = listBox2.SelectedItem.ToString();
+            string selectedName = lstbx_Systems.SelectedItem.ToString();
 
             curSystem = systems.FirstOrDefault(x => x.Name == selectedName);
 
             if (curSystem == null)
-                return;
-            if (!comboBox1.Items.Contains(curSystem.Name))
-                return;
+                return; //TODO: replace by error message
 
-            var idx = comboBox1.FindStringExact(curSystem.Name);
+            XmlSystemHighlighter.Highlight(rTxtBx_SystemPreview, BuildSystemXmlPreview(curSystem));
 
-            comboBox1.SelectedIndex = idx;
-            Debug.WriteLine("");
+            if (!cmbx_platform.Items.Contains(curSystem.Name))
+                curSystem.Name = platformsID.FirstOrDefault().ToString(); //set as unknown
 
+
+            //get set platform in UX
+
+            //get extensions
+            txtbx_Extensions.Text = curSystem.Extensions;
+            //get Path
+            //does path exist
+            if (!Directory.Exists(curSystem.Path))
+                errorProvider1.SetError(txtbx_GamesPath, "path doesn exist in this machine");
+
+            txtbx_GamesPath.Text = curSystem.Path;
+
+            var idx = cmbx_platform.FindStringExact(curSystem.Name);
+            cmbx_platform.SelectedIndex = idx;
+            //this auto sets the Full name, platform and theme
+
+            //validate command
+            if (string.IsNullOrWhiteSpace(curSystem.Command))
+                curSystem.Command = Properties.Settings.Default.launchersList.FirstOrDefault().Path; //set defualt launcher
+
+            //try to get the launcher
+            string launcherPattern = @"[\\/]+([^\\/]+)(?=\.exe)";
+
+            Match match = Regex.Match(curSystem.Command, launcherPattern, RegexOptions.IgnoreCase);
+
+            string launcher = "";
+            if (match.Success)
+            {
+                launcher = match.Groups[1].Value;
+                if (cmbx_launcher.Items.Contains(launcher))
+                    cmbx_launcher.SelectedIndex = cmbx_launcher.FindStringExact(launcher);
+                else
+                {
+                    cmbx_launcher.SelectedItem = null;
+                    errorProvider1.SetError(cmbx_launcher, "not installed launcher");
+                }
+            }
+            //get Core
+            string core = "";
+            if (!string.Equals(launcher, "retroarch"))
+                cmbx_libretro.SelectedIndex = 1;//set core to NA
+            else
+            {
+                string corePattern = @"-L\s+.*[\\/]([^\\/]+_libretro)";
+                match = Regex.Match(curSystem.Command, corePattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    core = match.Groups[1].Value;
+                    if (cmbx_libretro.Items.Contains(core))
+                        cmbx_libretro.SelectedIndex = cmbx_libretro.FindStringExact(core);
+                    else
+                    {
+                        cmbx_libretro.SelectedItem = null;
+                        errorProvider1.SetError(cmbx_libretro, "not installed core");
+                    }
+                }
+                else
+                {
+                    cmbx_libretro.SelectedItem = null;
+                    errorProvider1.SetError(cmbx_libretro, "not core configured");
+                }
+            }
+
+            //get extras
+            chk_fullscrn.Checked = Regex.IsMatch(curSystem.Command, @"\s-(f|-fullscreen)\b", RegexOptions.IgnoreCase);
+            chkbox_bash.Checked = Regex.IsMatch(curSystem.Command, @"\s-(b|-batch)\b", RegexOptions.IgnoreCase);
+
+            btnUpdate.Enabled = true;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void updateSystem()
         {
-            if(!string.IsNullOrEmpty(comboBox1.SelectedItem.ToString()))
-            button1.Enabled = !string.IsNullOrEmpty(platformsID[comboBox1.SelectedItem.ToString()]);
+            curSystem.Name = cmbx_platform.SelectedItem.ToString();
+            curSystem.FullName = txtbx_FullName.Text;
+            curSystem.Path = txtbx_GamesPath.Text;
+            curSystem.Extensions = txtbx_Extensions.Text;
+            curSystem.Command = buildCommand();//new command here
+            curSystem.Platform = txtbx_platform.Text;
+            curSystem.Theme = txtbx_theme.Text;
 
-            curSystem.FullName = comboBox1.SelectedItem.ToString();
-            curSystem.Platform = comboBox1.SelectedItem.ToString();
-            curSystem.Theme = comboBox1.SelectedItem.ToString();
+            XmlSystemHighlighter.Highlight(rTxtBx_SystemPreview, BuildSystemXmlPreview(curSystem));
+        }
 
-            textBox1.Text = curSystem.FullName;
-            textBox2.Text = curSystem.Path;
-            textBox3.Text = curSystem.Extension;
-            textBox4.Text = curSystem.Platform;
-            textBox5.Text = curSystem.Theme;
-            //txtCommand.Text = selectedSystem.Command;
+        public string buildCommand()
+        {
+            string newCommand = "";
+            string launcherPath = Properties.Settings.Default.launchersList.FirstOrDefault(x => x.Name == cmbx_launcher.SelectedItem.ToString()).Path;
+            string corePath = Path.GetDirectoryName(launcherPath);
+            corePath = $"{corePath}\\cores\\{cmbx_libretro.SelectedItem.ToString()}.dll";
+            //set the new launcher            
+            newCommand = $"{launcherPath} ";
+            string fullScreenParam = chk_fullscrn.Checked ? "-f " : " ";
+            if (string.Equals(cmbx_launcher.SelectedItem.ToString(), "retroarch"))
+            {
+                //build a command for retroarch here
+                newCommand += $"{fullScreenParam}-L \"{corePath}\" ";
+            }
+            else
+            {
+                //build command for no retroarch launcher
+                string extraParam = chkbox_bash.Checked ? " --batch " : " ";
+                newCommand += $"{extraParam}{fullScreenParam} --exec=";
+            }
+            newCommand += "\"%ROM_RAW%\"";
+            return newCommand;
+        }
 
-            richTextBox1.Text = BuildSystemXmlPreview(curSystem);
+        private void cmbx_platform_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(cmbx_platform.SelectedItem.ToString()))
+                return;
 
+            txtbx_FullName.Text = platformsID[cmbx_platform.SelectedItem.ToString()];
+            txtbx_platform.Text = cmbx_platform.SelectedItem.ToString();
+            txtbx_theme.Text = cmbx_platform.SelectedItem.ToString();
+
+            btn_GamesPath.Enabled = !string.IsNullOrEmpty(curSystem.FullName); //if platform full name is empty then is a invalid platform
         }
 
 
@@ -324,13 +423,136 @@ namespace EmulatioStation_cfg_Editor
                 new XElement("name", system.Name),
                 new XElement("fullname", system.FullName),
                 new XElement("path", system.Path),
-                new XElement("extension", system.Extension),
+                new XElement("extension", system.Extensions),
                 new XElement("command", system.Command),
                 new XElement("platform", system.Platform),
                 new XElement("theme", system.Theme)
             );
 
             return xml.ToString();
+        }
+
+
+        public static string NormalizeExtension(string ext)
+        {
+            if (string.IsNullOrWhiteSpace(ext))
+                return null;
+
+            ext = ext.Trim().ToLowerInvariant();
+
+            if (!ext.StartsWith("."))
+                ext = "." + ext;
+
+            return ext;
+        }
+
+        public static List<string> ParseExtensions(string extensionText)
+        {
+            if (string.IsNullOrWhiteSpace(extensionText))
+                return new List<string>();
+
+            return extensionText
+                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => NormalizeExtension(x))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        public static List<string> GetSupportedExtensions(string infoFilePath)
+        {
+            var result = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(infoFilePath))
+                return result;
+
+            if (!File.Exists(infoFilePath))
+                return result;
+
+            string[] lines = File.ReadAllLines(infoFilePath);
+
+            foreach (string rawLine in lines)
+            {
+                if (string.IsNullOrWhiteSpace(rawLine))
+                    continue;
+
+                string line = rawLine.Trim();
+
+                if (line.StartsWith("supported_extensions", StringComparison.OrdinalIgnoreCase))
+                {
+                    int index = line.IndexOf('=');
+                    if (index < 0)
+                        continue;
+
+                    string value = line.Substring(index + 1).Trim();
+
+                    // Quitar comillas si existen
+                    if (value.StartsWith("\"") && value.EndsWith("\"") && value.Length >= 2)
+                        value = value.Substring(1, value.Length - 2);
+
+                    result = value
+                        .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x.StartsWith(".") ? x.ToLower() : "." + x.ToLower())
+                        .Distinct()
+                        .ToList();
+
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            updateSystem();
+        }
+    }
+    public static class XmlSystemHighlighter
+    {
+        public static void Highlight(RichTextBox box, string xml)
+        {
+            box.SuspendLayout();
+
+            box.Text = xml;
+
+            // reset color
+            box.SelectAll();
+            box.SelectionColor = Color.Black;
+
+            // system
+            HighlightTag(box, "system", Color.Blue);
+
+            // elementos individuales
+            HighlightTag(box, "name", Color.MediumPurple);
+            HighlightTag(box, "fullname", Color.DarkBlue);
+            HighlightTag(box, "path", Color.SaddleBrown);
+            HighlightTag(box, "extension", Color.DarkGreen);
+            HighlightTag(box, "command", Color.Firebrick);
+            HighlightTag(box, "platform", Color.DarkOrange);
+            HighlightTag(box, "theme", Color.Gray);
+
+            box.Select(0, 0);
+            box.ResumeLayout();
+        }
+
+        private static void HighlightTag(RichTextBox box, string tag, Color color)
+        {
+            // etiqueta de apertura <tag>
+            HighlightPattern(box, $@"<{tag}>", color);
+
+            // etiqueta de cierre </tag>
+            HighlightPattern(box, $@"</{tag}>", color);
+        }
+
+        private static void HighlightPattern(RichTextBox box, string pattern, Color color)
+        {
+            foreach (Match match in Regex.Matches(box.Text, pattern))
+            {
+                box.Select(match.Index, match.Length);
+                box.SelectionColor = color;
+            }
         }
     }
 
