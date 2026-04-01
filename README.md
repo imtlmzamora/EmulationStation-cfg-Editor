@@ -1,3 +1,6 @@
+<img width="400" height="400" alt="EsSettEditor_Ico" src="https://github.com/user-attachments/assets/e37dc5c5-034a-45dd-a74e-208e7e18b391" />
+
+
 I originnally created this project for me but felt that as companies become gready
 more people will try to perserve the oldies
 
@@ -61,9 +64,14 @@ Instead of writing this manually:
 You configure:
 
 - Emulator: RetroArch
-Core: genesis_plus_gx
-Fullscreen: true
-And the tool generates the correct command automatically.
+- Core: mupen64plus_next
+- Fullscreen: true
+- And the tool generates the correct command automatically.
+
+<img width="367" height="355" alt="image" src="https://github.com/user-attachments/assets/5a3893a2-4650-43fe-8a01-25d7bd0faf51" />
+
+<img width="353" height="350" alt="image" src="https://github.com/user-attachments/assets/97d12ad9-7533-488e-8b7e-14e698218223" />
+
 ---
 ## 🏗 Architecture
 
@@ -78,7 +86,7 @@ XML Parser → reads/writes EmulationStation config
 
 - RetroArch (Libretro cores)
 - Dolphin (GameCube / Wii)
-- More coming soon...
+- and warever is a .exe launcher
   
 ---
 ## ⚠️ Notes
