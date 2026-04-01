@@ -24,7 +24,8 @@ namespace EmulatioStation_cfg_Editor
     public partial class mainForm : Form
     {
         List<EsSystem> systems = new List<EsSystem>();
-        EsSystem curSystem = new EsSystem();//define the system we are editing
+        private EsSystem curSystem = new EsSystem();//define the system we are editing
+        private EsSystem oriSystem = new EsSystem();//original system before changes
 
         struct launchConfig
         {
@@ -35,7 +36,8 @@ namespace EmulatioStation_cfg_Editor
             public string libreteto { get; set; }
 
         }
-        //I literally copy this from the github of emulationstation :P
+
+        //I literally copy this from the github of the emulationstation project :P
         Dictionary<string, string> platformsID = new Dictionary<string, string>
         {
             { "unknown", "" },// nothing set
@@ -122,7 +124,12 @@ namespace EmulatioStation_cfg_Editor
 
             cmbx_platform.DataSource = platformsID.Keys.ToList();
             updateLauncherListView();
-            loadSettings();
+
+            systems = getSystems();
+            lstbx_Systems.DataSource = null;
+            lstbx_Systems.DataSource = systems;
+            lstbx_Systems.DisplayMember = "Name";
+            RefreshSystemList();
 
         }
 
@@ -225,20 +232,34 @@ namespace EmulatioStation_cfg_Editor
             cmbx_launcher.DataSource = lstbx_Launchers.Items;
         }
 
-        public void loadSettings()
+        public List<EsSystem> getSystems()
         {
-            lstbx_Systems.Items.Clear();
-            systems = EmulationStationCfgReader.LoadSystems(Properties.Settings.Default.strSettingFilePath);
+            return EmulationStationCfgReader.LoadSystems(Properties.Settings.Default.strSettingFilePath);
+        }
+        public void RefreshSystemList()
+        {
+            string selectedSystem = curSystem.Name;
 
-            foreach (var system in systems)
+            lstbx_Systems.DataSource = null;
+            lstbx_Systems.DataSource = systems;
+            lstbx_Systems.DisplayMember = "Name";
+
+            //check is the system still exists
+            if (selectedSystem == null)
             {
-                if (!platformsID.Keys.Contains(system.Name))
-                    continue;
-
-                lstbx_Systems.Items.Add(system.Name);
+                lstbx_Systems.SelectedIndex = 0;
+                return;
+            }
+            if (systems.Any(x => string.Equals(x.Name, selectedSystem, StringComparison.OrdinalIgnoreCase)))
+            {
+                //exist! we need the index
+                int index = systems.FindIndex(x => string.Equals(x.Name, curSystem.Name, StringComparison.OrdinalIgnoreCase));
+                lstbx_Systems.SelectedIndex = index;
+            }else
+            {
+                lstbx_Systems.SelectedIndex = 0;
             }
 
-            lstbx_Systems.SelectedIndex = 0;
         }
 
         public class EsSystem
@@ -280,14 +301,37 @@ namespace EmulatioStation_cfg_Editor
 
         private void lstbx_Systems_SelectedIndexChanged(object sender, EventArgs e)
         {
+            //new system selected.. reset all
             errorProvider1.Clear();
-            btnUpdate.Enabled = false;
+
+            ClearEditor();
 
             if (lstbx_Systems.SelectedIndex < 0)
                 return;
-            string selectedName = lstbx_Systems.SelectedItem.ToString();
+            var temp = (EsSystem)lstbx_Systems.SelectedItem;
 
-            curSystem = systems.FirstOrDefault(x => x.Name == selectedName);
+                curSystem = new EsSystem
+                {
+                    Name = temp.Name,
+                    FullName = temp.FullName,
+                    Path = temp.Path,
+                    Extensions = temp.Extensions,
+                    Command = temp.Command,
+                    Platform = temp.Platform,
+                    Theme = temp.Theme
+                };
+
+                if (curSystem != null)
+                    oriSystem = new EsSystem()
+                    {
+                        Name = curSystem.Name,
+                        FullName = curSystem.FullName,
+                        Path = curSystem.Path,
+                        Extensions = curSystem.Extensions,
+                        Command = curSystem.Command,
+                        Platform = curSystem.Platform,
+                        Theme = curSystem.Theme
+                    };
 
             if (curSystem == null)
                 return; //TODO: replace by error message
@@ -295,7 +339,10 @@ namespace EmulatioStation_cfg_Editor
             XmlSystemHighlighter.Highlight(rTxtBx_SystemPreview, BuildSystemXmlPreview(curSystem));
 
             if (!cmbx_platform.Items.Contains(curSystem.Name))
-                curSystem.Name = platformsID.FirstOrDefault().ToString(); //set as unknown
+            {
+                cmbx_platform.Text = curSystem.Name;
+                errorProvider1.SetError(cmbx_platform,"platform not supported!!");
+            }
 
 
             //get set platform in UX
@@ -337,7 +384,7 @@ namespace EmulatioStation_cfg_Editor
             //get Core
             string core = "";
             if (!string.Equals(launcher, "retroarch"))
-                cmbx_libretro.SelectedIndex = 1;//set core to NA
+                cmbx_libretro.SelectedIndex = 0;//set core to NA
             else
             {
                 string corePattern = @"-L\s+.*[\\/]([^\\/]+_libretro)";
@@ -346,16 +393,18 @@ namespace EmulatioStation_cfg_Editor
                 {
                     core = match.Groups[1].Value;
                     if (cmbx_libretro.Items.Contains(core))
+                    {
                         cmbx_libretro.SelectedIndex = cmbx_libretro.FindStringExact(core);
+                    }
                     else
                     {
-                        cmbx_libretro.SelectedItem = null;
+                        cmbx_libretro.Text = core;
                         errorProvider1.SetError(cmbx_libretro, "not installed core");
                     }
                 }
                 else
                 {
-                    cmbx_libretro.SelectedItem = null;
+                    cmbx_libretro.SelectedItem = 0;
                     errorProvider1.SetError(cmbx_libretro, "not core configured");
                 }
             }
@@ -364,32 +413,66 @@ namespace EmulatioStation_cfg_Editor
             chk_fullscrn.Checked = Regex.IsMatch(curSystem.Command, @"\s-(f|-fullscreen)\b", RegexOptions.IgnoreCase);
             chkbox_bash.Checked = Regex.IsMatch(curSystem.Command, @"\s-(b|-batch)\b", RegexOptions.IgnoreCase);
 
+            button4.Enabled = true;
             btnUpdate.Enabled = true;
+            updateSystem();
         }
 
-        private void updateSystem()
+        private bool updateSystem()
         {
-            curSystem.Name = cmbx_platform.SelectedItem.ToString();
-            curSystem.FullName = txtbx_FullName.Text;
-            curSystem.Path = txtbx_GamesPath.Text;
-            curSystem.Extensions = txtbx_Extensions.Text;
-            curSystem.Command = buildCommand();//new command here
-            curSystem.Platform = txtbx_platform.Text;
-            curSystem.Theme = txtbx_theme.Text;
+            if (cmbx_platform.SelectedItem == null)
+                return false;
 
-            XmlSystemHighlighter.Highlight(rTxtBx_SystemPreview, BuildSystemXmlPreview(curSystem));
+            try
+            {
+                curSystem.Name = cmbx_platform.SelectedItem.ToString();
+                curSystem.FullName = txtbx_FullName.Text;
+                curSystem.Path = txtbx_GamesPath.Text;
+                curSystem.Extensions = txtbx_Extensions.Text;
+                curSystem.Command = buildCommand();//new command here
+                curSystem.Platform = txtbx_platform.Text;
+                curSystem.Theme = txtbx_theme.Text;
+
+
+                XmlSystemHighlighter.Highlight(rTxtBx_SystemPreview, BuildSystemXmlPreview(curSystem));
+
+                //are we updating a existing system?
+                return !string.Equals(oriSystem.Name, curSystem.Name, StringComparison.Ordinal) ||
+                       !string.Equals(oriSystem.FullName, curSystem.FullName, StringComparison.Ordinal) ||
+                       !string.Equals(oriSystem.Path, curSystem.Path, StringComparison.Ordinal) ||
+                       !string.Equals(oriSystem.Extensions, curSystem.Extensions, StringComparison.Ordinal) ||
+                       !string.Equals(oriSystem.Command, curSystem.Command, StringComparison.Ordinal) ||
+                       !string.Equals(oriSystem.Platform, curSystem.Platform, StringComparison.Ordinal) ||
+                       !string.Equals(oriSystem.Theme, curSystem.Theme, StringComparison.Ordinal);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
         }
 
         public string buildCommand()
         {
             string newCommand = "";
-            string launcherPath = Properties.Settings.Default.launchersList.FirstOrDefault(x => x.Name == cmbx_launcher.SelectedItem.ToString()).Path;
-            string corePath = Path.GetDirectoryName(launcherPath);
-            corePath = $"{corePath}\\cores\\{cmbx_libretro.SelectedItem.ToString()}.dll";
+            string launcherPath = "";
+            string corePath = "";
+            if (cmbx_launcher.SelectedItem != null)
+                launcherPath = Properties.Settings.Default.launchersList.FirstOrDefault(x => x.Name == cmbx_launcher.SelectedItem.ToString()).Path;
+
+            if (cmbx_libretro.SelectedItem == null)
+                return "";
+
+            if (!string.IsNullOrEmpty(launcherPath))
+            {
+                corePath = Path.GetDirectoryName(launcherPath);
+                corePath = $"{corePath}\\cores\\{cmbx_libretro.SelectedItem.ToString()}.dll";
+            }
+
             //set the new launcher            
             newCommand = $"{launcherPath} ";
             string fullScreenParam = chk_fullscrn.Checked ? "-f " : " ";
-            if (string.Equals(cmbx_launcher.SelectedItem.ToString(), "retroarch"))
+            if (string.Equals(cmbx_launcher.SelectedItem?.ToString(), "retroarch"))
             {
                 //build a command for retroarch here
                 newCommand += $"{fullScreenParam}-L \"{corePath}\" ";
@@ -406,14 +489,29 @@ namespace EmulatioStation_cfg_Editor
 
         private void cmbx_platform_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(cmbx_platform.SelectedItem.ToString()))
+            errorProvider1.SetError(cmbx_platform,"");
+            if (cmbx_platform.SelectedItem == null)
                 return;
 
-            txtbx_FullName.Text = platformsID[cmbx_platform.SelectedItem.ToString()];
-            txtbx_platform.Text = cmbx_platform.SelectedItem.ToString();
-            txtbx_theme.Text = cmbx_platform.SelectedItem.ToString();
+            if (curSystem.Name != cmbx_platform.SelectedItem.ToString())
+            {
+                //the name changed, check if a system with the same name existe
+                if (systems.Any(x => string.Equals(x.Name, cmbx_platform.SelectedItem.ToString(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    txtbx_FullName.Text = "";
+                    txtbx_platform.Text = "";
+                    txtbx_theme.Text = "";
+                    errorProvider1.SetError(cmbx_platform, "this system already exist");
+                    return;
+                }
+                curSystem.Name = cmbx_platform.SelectedItem.ToString();
+            }
 
-            btn_GamesPath.Enabled = !string.IsNullOrEmpty(curSystem.FullName); //if platform full name is empty then is a invalid platform
+            txtbx_FullName.Text = platformsID[curSystem.Name];
+            txtbx_platform.Text = curSystem.Name;
+            txtbx_theme.Text = curSystem.Name;
+
+            btn_GamesPath.Enabled = cmbx_platform.SelectedItem != null; //if platform full name is empty then is a invalid platform
         }
 
 
@@ -432,7 +530,49 @@ namespace EmulatioStation_cfg_Editor
             return xml.ToString();
         }
 
+        public static XDocument BuildSystemsXml(List<EsSystem> systems)
+        {
+            return new XDocument(
+                new XElement("systemList",
+                    systems.Select(s => new XElement("system",
+                        new XElement("name", s.Name ?? ""),
+                        new XElement("fullname", s.FullName ?? ""),
+                        new XElement("path", s.Path ?? ""),
+                        new XElement("extension", s.Extensions ?? ""),
+                        new XElement("command", s.Command ?? ""),
+                        new XElement("platform", s.Platform ?? ""),
+                        new XElement("theme", s.Theme ?? "")
+                    ))
+                )
+            );
+        }
 
+        public static void SaveWithBackup(string filePath, List<EsSystem> systems)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("Invalid file path");
+
+            string backupPath = filePath + ".bak";
+            string tempPath = filePath + ".tmp";
+
+            // 1. Crear XML
+            XDocument doc = BuildSystemsXml(systems);
+
+            // 2. Guardar en archivo temporal
+            doc.Save(tempPath);
+
+            // 3. Crear backup si existe el original
+            if (File.Exists(filePath))
+            {
+                File.Copy(filePath, backupPath, true);
+            }
+
+            // 4. Reemplazar archivo original
+            File.Copy(tempPath, filePath, true);
+
+            // 5. Limpiar temp
+            File.Delete(tempPath);
+        }
         public static string NormalizeExtension(string ext)
         {
             if (string.IsNullOrWhiteSpace(ext))
@@ -446,7 +586,7 @@ namespace EmulatioStation_cfg_Editor
             return ext;
         }
 
-        public static List<string> ParseExtensions(string extensionText)
+        public static List<string> ParseStringToList(string extensionText)
         {
             if (string.IsNullOrWhiteSpace(extensionText))
                 return new List<string>();
@@ -505,10 +645,192 @@ namespace EmulatioStation_cfg_Editor
         }
 
         private void btnUpdate_Click(object sender, EventArgs e)
+        {            
+            btnSave.Enabled = updateSystem();
+        }
+
+
+        private void cmbx_launcher_SelectedIndexChanged(object sender, EventArgs e)
         {
-            updateSystem();
+        }
+
+        private void chkbox_bash_CheckedChanged(object sender, EventArgs e)
+        {
+        }
+
+        private void chk_fullscrn_CheckedChanged(object sender, EventArgs e)
+        {
+        }
+
+        private void cmbx_libretro_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            errorProvider1.SetError(cmbx_libretro, "");
+            if (cmbx_launcher.SelectedItem == null)
+                return;
+
+            if (cmbx_libretro.SelectedItem.ToString() != "NA")
+            {
+                string infopath = "";
+                string launcherPath = Properties.Settings.Default.launchersList.FirstOrDefault(x => x.Name == cmbx_launcher.SelectedItem.ToString()).Path;
+
+                if (!string.IsNullOrEmpty(launcherPath))
+                {
+                    infopath = Path.GetDirectoryName(launcherPath);
+                    infopath = $"{infopath}\\info\\{cmbx_libretro.SelectedItem.ToString()}.info";
+                    
+
+                    //if the core has changed a new list is created
+                    if (HasCoreChanged(curSystem))
+                        txtbx_Extensions.Text = "";
+
+                    //we validate that all extension exist in the current list
+                    var currExt = ParseStringToList(txtbx_Extensions.Text);
+                    var validExtension = GetSupportedExtensions(infopath);
+
+                    foreach (var ext in validExtension)
+                    {
+                        if (!currExt.Contains(ext))
+                            currExt.Add(ext);
+                    }
+                    txtbx_Extensions.Text = string.Join(" ", currExt);
+                }
+            }
+        }
+
+        public bool HasCoreChanged(EsSystem system)
+        {
+            string curLauncherPath = "";
+            string currCorePath = "";
+
+            if (cmbx_launcher.SelectedItem != null)
+                curLauncherPath = Properties.Settings.Default.launchersList.FirstOrDefault(x => x.Name == cmbx_launcher.SelectedItem.ToString()).Path;
+
+            if (!string.IsNullOrEmpty(curLauncherPath))
+            {
+                currCorePath = Path.GetDirectoryName(curLauncherPath);
+                currCorePath = $"{currCorePath}\\cores\\{cmbx_libretro.SelectedItem.ToString()}.dll";
+            }
+
+            if (string.IsNullOrWhiteSpace(currCorePath))
+                return false;
+
+            string currentCore = Path.GetFileNameWithoutExtension(currCorePath);
+            string lastCore = "";
+
+            if (!string.IsNullOrWhiteSpace(system.Command))
+            {
+                string corePattern = @"-L\s+.*[\\/]([^\\/]+_libretro)";
+                Match match = Regex.Match(curSystem.Command, corePattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    lastCore = match.Groups[1].Value;                    
+                }                
+            }
+
+            if (!string.Equals(lastCore, currentCore, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            //it is a update if the name doesnt changed
+            if (oriSystem.Name == curSystem.Name)
+            {
+                //get index
+                int index = systems.FindIndex(x => string.Equals(x.Name, curSystem.Name, StringComparison.OrdinalIgnoreCase));
+                if (index < 0 || index >= systems.Count)
+                    return;
+
+                //this overwrite the selected system by index
+                systems[index].Name = cmbx_platform.SelectedItem.ToString();
+                systems[index].FullName = txtbx_FullName.Text;
+                systems[index].Path = txtbx_GamesPath.Text;
+                systems[index].Extensions = txtbx_Extensions.Text;
+                systems[index].Command = buildCommand();//new command here
+                systems[index].Platform = txtbx_platform.Text;
+                systems[index].Theme = txtbx_theme.Text;
+            }
+            else
+            {
+                //the name changed, we need to check there is not other with the same name
+                if (systems.Any(x => string.Equals(x.Name, curSystem.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    MessageBox.Show("a system with this name already exist, selected it to edit that one instead", "duplicated system", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                else
+                    //this add a new system
+                    systems.Add(curSystem);
+            }
+            
+            
+
+            RefreshSystemList();
+        }
+
+        private void setRomPathToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveWithBackup(Properties.Settings.Default.strSettingFilePath,systems);
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            DeleteCurrentSystem();
+        }
+
+        private void DeleteCurrentSystem()
+        {
+            int index = lstbx_Systems.SelectedIndex;
+
+            if (index < 0 || index >= systems.Count)
+                return;
+
+            systems.RemoveAt(index);
+
+            RefreshSystemList();
+
+            if (systems.Count == 0)
+            {
+                ClearEditor();
+                rTxtBx_SystemPreview.Clear();
+                btnSave.Enabled = false;
+                return;
+            }
+
+            int newIndex = index;
+            if (newIndex >= systems.Count)
+                newIndex = systems.Count - 1;
+
+            lstbx_Systems.SelectedIndex = newIndex;
+        }
+
+        private void ClearEditor()
+        {
+            txtbx_FullName.Text = "";
+            txtbx_GamesPath.Text = "";
+            txtbx_Extensions.Text = "";
+            txtbx_platform.Text = "";
+            txtbx_theme.Text = "";
+
+            cmbx_platform.SelectedItem = null;
+            cmbx_launcher.SelectedItem = null;
+            cmbx_libretro.SelectedItem = null;
+
+            chkbox_bash.Checked = false;
+            chk_fullscrn.Checked = false;
+
+            btnUpdate.Enabled = false;
+            btnSave.Enabled = false;
+            button4.Enabled = false;
+
+            rTxtBx_SystemPreview.Text = "";
         }
     }
+
     public static class XmlSystemHighlighter
     {
         public static void Highlight(RichTextBox box, string xml)
@@ -554,6 +876,7 @@ namespace EmulatioStation_cfg_Editor
                 box.SelectionColor = color;
             }
         }
+
     }
 
 
