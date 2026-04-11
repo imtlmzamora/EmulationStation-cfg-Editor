@@ -253,7 +253,7 @@ namespace EmulatioStation_cfg_Editor
             if (systems.Any(x => string.Equals(x.Name, selectedSystem, StringComparison.OrdinalIgnoreCase)))
             {
                 //exist! we need the index
-                int index = systems.FindIndex(x => string.Equals(x.Name, curSystem.Name, StringComparison.OrdinalIgnoreCase));
+                int index = systems.FindIndex(x => string.Equals(x.Name, selectedSystem, StringComparison.OrdinalIgnoreCase));
                 lstbx_Systems.SelectedIndex = index;
             }else
             {
@@ -413,8 +413,13 @@ namespace EmulatioStation_cfg_Editor
             chk_fullscrn.Checked = Regex.IsMatch(curSystem.Command, @"\s-(f|-fullscreen)\b", RegexOptions.IgnoreCase);
             chkbox_bash.Checked = Regex.IsMatch(curSystem.Command, @"\s-(b|-batch)\b", RegexOptions.IgnoreCase);
 
-            button4.Enabled = true;
+            btn_Delete.Enabled = true;
             btnUpdate.Enabled = true;
+
+            btn_movTop.Enabled = lstbx_Systems.SelectedIndex > 0;
+            btn_movBottom.Enabled = lstbx_Systems.SelectedIndex < lstbx_Systems.Items.Count - 1;
+            btn_movDown.Enabled = lstbx_Systems.SelectedIndex < lstbx_Systems.Items.Count - 1;
+            btn_movUp.Enabled = lstbx_Systems.SelectedIndex > 0;
             updateSystem();
         }
 
@@ -827,7 +832,7 @@ namespace EmulatioStation_cfg_Editor
 
             btnUpdate.Enabled = false;
             btnSave.Enabled = false;
-            button4.Enabled = false;
+            btn_Delete.Enabled = false;
 
             rTxtBx_SystemPreview.Text = "";
         }
@@ -849,6 +854,41 @@ namespace EmulatioStation_cfg_Editor
                     txtbx_GamesPath.Text = folderPath;
                 }
             }
+        }
+        private void MoveItem(int oldIndex, int newIndex)
+        {
+            EsSystem item = systems[oldIndex];
+            systems.RemoveAt(oldIndex);
+            systems.Insert(newIndex, item);
+            RefreshSystemList();
+        }
+
+        private void btn_movTop_Click(object sender, EventArgs e)
+        {
+            int index = lstbx_Systems.SelectedIndex;
+            if (index > 0)
+                MoveItem(index, 0);
+        }
+
+        private void btn_movUp_Click(object sender, EventArgs e)
+        {
+            int index = lstbx_Systems.SelectedIndex;
+            if (index > 0)
+                MoveItem(index, index - 1);
+        }
+
+        private void btn_movDown_Click(object sender, EventArgs e)
+        {
+            int index = lstbx_Systems.SelectedIndex;
+            if (index >= 0 && index < systems.Count - 1)
+                MoveItem(index, index + 1);
+        }
+
+        private void btn_movBottom_Click(object sender, EventArgs e)
+        {
+            int index = lstbx_Systems.SelectedIndex;
+            if (index >= 0 && index < systems.Count - 1)
+                MoveItem(index, systems.Count - 1);
         }
     }
 

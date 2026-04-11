@@ -41,8 +41,11 @@ namespace EmulatioStation_cfg_Editor
             this.setRomPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.lstbx_Systems = new System.Windows.Forms.ListBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.btn_movBottom = new System.Windows.Forms.Button();
+            this.btn_movDown = new System.Windows.Forms.Button();
+            this.btn_movUp = new System.Windows.Forms.Button();
+            this.btn_movTop = new System.Windows.Forms.Button();
             this.chk_fullscrn = new System.Windows.Forms.CheckBox();
-            this.button4 = new System.Windows.Forms.Button();
             this.chkbox_bash = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.txtbx_theme = new System.Windows.Forms.TextBox();
@@ -61,6 +64,7 @@ namespace EmulatioStation_cfg_Editor
             this.label1 = new System.Windows.Forms.Label();
             this.btn_GamesPath = new System.Windows.Forms.Button();
             this.lblSystemName = new System.Windows.Forms.Label();
+            this.btn_Delete = new System.Windows.Forms.Button();
             this.label8 = new System.Windows.Forms.Label();
             this.rTxtBx_SystemPreview = new System.Windows.Forms.RichTextBox();
             this.btnSave = new System.Windows.Forms.Button();
@@ -123,7 +127,7 @@ namespace EmulatioStation_cfg_Editor
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(868, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(831, 24);
             this.menuStrip1.TabIndex = 4;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -153,7 +157,7 @@ namespace EmulatioStation_cfg_Editor
             // lstbx_Systems
             // 
             this.lstbx_Systems.FormattingEnabled = true;
-            this.lstbx_Systems.Location = new System.Drawing.Point(6, 19);
+            this.lstbx_Systems.Location = new System.Drawing.Point(47, 19);
             this.lstbx_Systems.Name = "lstbx_Systems";
             this.lstbx_Systems.Size = new System.Drawing.Size(98, 342);
             this.lstbx_Systems.TabIndex = 5;
@@ -161,8 +165,11 @@ namespace EmulatioStation_cfg_Editor
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.btn_movBottom);
+            this.groupBox2.Controls.Add(this.btn_movDown);
+            this.groupBox2.Controls.Add(this.btn_movUp);
+            this.groupBox2.Controls.Add(this.btn_movTop);
             this.groupBox2.Controls.Add(this.chk_fullscrn);
-            this.groupBox2.Controls.Add(this.button4);
             this.groupBox2.Controls.Add(this.chkbox_bash);
             this.groupBox2.Controls.Add(this.label7);
             this.groupBox2.Controls.Add(this.txtbx_theme);
@@ -189,10 +196,57 @@ namespace EmulatioStation_cfg_Editor
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Setting Systems";
             // 
+            // btn_movBottom
+            // 
+            this.btn_movBottom.Enabled = false;
+            this.btn_movBottom.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btn_movBottom.Location = new System.Drawing.Point(6, 231);
+            this.btn_movBottom.Name = "btn_movBottom";
+            this.btn_movBottom.Size = new System.Drawing.Size(35, 23);
+            this.btn_movBottom.TabIndex = 34;
+            this.btn_movBottom.Text = "▼";
+            this.btn_movBottom.UseVisualStyleBackColor = true;
+            this.btn_movBottom.Click += new System.EventHandler(this.btn_movBottom_Click);
+            // 
+            // btn_movDown
+            // 
+            this.btn_movDown.Enabled = false;
+            this.btn_movDown.Location = new System.Drawing.Point(6, 203);
+            this.btn_movDown.Name = "btn_movDown";
+            this.btn_movDown.Size = new System.Drawing.Size(35, 23);
+            this.btn_movDown.TabIndex = 33;
+            this.btn_movDown.Tag = "";
+            this.btn_movDown.Text = "▼";
+            this.btn_movDown.UseVisualStyleBackColor = true;
+            this.btn_movDown.Click += new System.EventHandler(this.btn_movDown_Click);
+            // 
+            // btn_movUp
+            // 
+            this.btn_movUp.Enabled = false;
+            this.btn_movUp.Location = new System.Drawing.Point(6, 142);
+            this.btn_movUp.Name = "btn_movUp";
+            this.btn_movUp.Size = new System.Drawing.Size(35, 23);
+            this.btn_movUp.TabIndex = 32;
+            this.btn_movUp.Text = "▲";
+            this.btn_movUp.UseVisualStyleBackColor = true;
+            this.btn_movUp.Click += new System.EventHandler(this.btn_movUp_Click);
+            // 
+            // btn_movTop
+            // 
+            this.btn_movTop.Enabled = false;
+            this.btn_movTop.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline);
+            this.btn_movTop.Location = new System.Drawing.Point(6, 113);
+            this.btn_movTop.Name = "btn_movTop";
+            this.btn_movTop.Size = new System.Drawing.Size(35, 23);
+            this.btn_movTop.TabIndex = 31;
+            this.btn_movTop.Text = "▲";
+            this.btn_movTop.UseVisualStyleBackColor = true;
+            this.btn_movTop.Click += new System.EventHandler(this.btn_movTop_Click);
+            // 
             // chk_fullscrn
             // 
             this.chk_fullscrn.AutoSize = true;
-            this.chk_fullscrn.Location = new System.Drawing.Point(175, 350);
+            this.chk_fullscrn.Location = new System.Drawing.Point(216, 350);
             this.chk_fullscrn.Name = "chk_fullscrn";
             this.chk_fullscrn.Size = new System.Drawing.Size(79, 17);
             this.chk_fullscrn.TabIndex = 25;
@@ -200,21 +254,10 @@ namespace EmulatioStation_cfg_Editor
             this.chk_fullscrn.UseVisualStyleBackColor = true;
             this.chk_fullscrn.CheckedChanged += new System.EventHandler(this.chk_fullscrn_CheckedChanged);
             // 
-            // button4
-            // 
-            this.button4.Enabled = false;
-            this.button4.Location = new System.Drawing.Point(6, 369);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(98, 23);
-            this.button4.TabIndex = 30;
-            this.button4.Text = "Delete";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
-            // 
             // chkbox_bash
             // 
             this.chkbox_bash.AutoSize = true;
-            this.chkbox_bash.Location = new System.Drawing.Point(114, 350);
+            this.chkbox_bash.Location = new System.Drawing.Point(155, 350);
             this.chkbox_bash.Name = "chkbox_bash";
             this.chkbox_bash.Size = new System.Drawing.Size(55, 17);
             this.chkbox_bash.TabIndex = 24;
@@ -225,7 +268,7 @@ namespace EmulatioStation_cfg_Editor
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(111, 271);
+            this.label7.Location = new System.Drawing.Point(152, 271);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(36, 13);
             this.label7.TabIndex = 23;
@@ -233,7 +276,7 @@ namespace EmulatioStation_cfg_Editor
             // 
             // txtbx_theme
             // 
-            this.txtbx_theme.Location = new System.Drawing.Point(114, 289);
+            this.txtbx_theme.Location = new System.Drawing.Point(155, 289);
             this.txtbx_theme.Name = "txtbx_theme";
             this.txtbx_theme.ReadOnly = true;
             this.txtbx_theme.Size = new System.Drawing.Size(179, 20);
@@ -242,7 +285,7 @@ namespace EmulatioStation_cfg_Editor
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(111, 216);
+            this.label6.Location = new System.Drawing.Point(152, 216);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(44, 13);
             this.label6.TabIndex = 21;
@@ -250,7 +293,7 @@ namespace EmulatioStation_cfg_Editor
             // 
             // txtbx_platform
             // 
-            this.txtbx_platform.Location = new System.Drawing.Point(114, 234);
+            this.txtbx_platform.Location = new System.Drawing.Point(155, 234);
             this.txtbx_platform.Name = "txtbx_platform";
             this.txtbx_platform.ReadOnly = true;
             this.txtbx_platform.Size = new System.Drawing.Size(179, 20);
@@ -259,7 +302,7 @@ namespace EmulatioStation_cfg_Editor
             // cmbx_libretro
             // 
             this.cmbx_libretro.FormattingEnabled = true;
-            this.cmbx_libretro.Location = new System.Drawing.Point(278, 135);
+            this.cmbx_libretro.Location = new System.Drawing.Point(319, 135);
             this.cmbx_libretro.Name = "cmbx_libretro";
             this.cmbx_libretro.Size = new System.Drawing.Size(147, 21);
             this.cmbx_libretro.TabIndex = 19;
@@ -268,7 +311,7 @@ namespace EmulatioStation_cfg_Editor
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(277, 118);
+            this.label5.Location = new System.Drawing.Point(318, 118);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(29, 13);
             this.label5.TabIndex = 18;
@@ -277,7 +320,7 @@ namespace EmulatioStation_cfg_Editor
             // cmbx_launcher
             // 
             this.cmbx_launcher.FormattingEnabled = true;
-            this.cmbx_launcher.Location = new System.Drawing.Point(112, 135);
+            this.cmbx_launcher.Location = new System.Drawing.Point(153, 135);
             this.cmbx_launcher.Name = "cmbx_launcher";
             this.cmbx_launcher.Size = new System.Drawing.Size(121, 21);
             this.cmbx_launcher.TabIndex = 17;
@@ -286,7 +329,7 @@ namespace EmulatioStation_cfg_Editor
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(111, 118);
+            this.label4.Location = new System.Drawing.Point(152, 118);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(52, 13);
             this.label4.TabIndex = 16;
@@ -295,7 +338,7 @@ namespace EmulatioStation_cfg_Editor
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(111, 169);
+            this.label3.Location = new System.Drawing.Point(152, 169);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(58, 13);
             this.label3.TabIndex = 15;
@@ -303,7 +346,7 @@ namespace EmulatioStation_cfg_Editor
             // 
             // txtbx_Extensions
             // 
-            this.txtbx_Extensions.Location = new System.Drawing.Point(114, 185);
+            this.txtbx_Extensions.Location = new System.Drawing.Point(155, 185);
             this.txtbx_Extensions.Name = "txtbx_Extensions";
             this.txtbx_Extensions.Size = new System.Drawing.Size(311, 20);
             this.txtbx_Extensions.TabIndex = 14;
@@ -311,7 +354,7 @@ namespace EmulatioStation_cfg_Editor
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(243, 21);
+            this.label2.Location = new System.Drawing.Point(284, 21);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(54, 13);
             this.label2.TabIndex = 13;
@@ -319,7 +362,7 @@ namespace EmulatioStation_cfg_Editor
             // 
             // txtbx_FullName
             // 
-            this.txtbx_FullName.Location = new System.Drawing.Point(246, 39);
+            this.txtbx_FullName.Location = new System.Drawing.Point(287, 39);
             this.txtbx_FullName.Name = "txtbx_FullName";
             this.txtbx_FullName.ReadOnly = true;
             this.txtbx_FullName.Size = new System.Drawing.Size(179, 20);
@@ -328,7 +371,7 @@ namespace EmulatioStation_cfg_Editor
             // cmbx_platform
             // 
             this.cmbx_platform.FormattingEnabled = true;
-            this.cmbx_platform.Location = new System.Drawing.Point(110, 38);
+            this.cmbx_platform.Location = new System.Drawing.Point(151, 38);
             this.cmbx_platform.Name = "cmbx_platform";
             this.cmbx_platform.Size = new System.Drawing.Size(86, 21);
             this.cmbx_platform.TabIndex = 11;
@@ -336,7 +379,7 @@ namespace EmulatioStation_cfg_Editor
             // 
             // txtbx_GamesPath
             // 
-            this.txtbx_GamesPath.Location = new System.Drawing.Point(110, 84);
+            this.txtbx_GamesPath.Location = new System.Drawing.Point(151, 84);
             this.txtbx_GamesPath.Name = "txtbx_GamesPath";
             this.txtbx_GamesPath.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.txtbx_GamesPath.Size = new System.Drawing.Size(235, 20);
@@ -345,7 +388,7 @@ namespace EmulatioStation_cfg_Editor
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(107, 67);
+            this.label1.Location = new System.Drawing.Point(148, 67);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(65, 13);
             this.label1.TabIndex = 9;
@@ -355,7 +398,7 @@ namespace EmulatioStation_cfg_Editor
             // 
             this.btn_GamesPath.Enabled = false;
             this.btn_GamesPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btn_GamesPath.Location = new System.Drawing.Point(397, 83);
+            this.btn_GamesPath.Location = new System.Drawing.Point(438, 83);
             this.btn_GamesPath.Name = "btn_GamesPath";
             this.btn_GamesPath.Size = new System.Drawing.Size(28, 20);
             this.btn_GamesPath.TabIndex = 8;
@@ -366,11 +409,22 @@ namespace EmulatioStation_cfg_Editor
             // lblSystemName
             // 
             this.lblSystemName.AutoSize = true;
-            this.lblSystemName.Location = new System.Drawing.Point(109, 21);
+            this.lblSystemName.Location = new System.Drawing.Point(150, 21);
             this.lblSystemName.Name = "lblSystemName";
             this.lblSystemName.Size = new System.Drawing.Size(76, 13);
             this.lblSystemName.TabIndex = 6;
             this.lblSystemName.Text = "Platform Name";
+            // 
+            // btn_Delete
+            // 
+            this.btn_Delete.Enabled = false;
+            this.btn_Delete.Location = new System.Drawing.Point(721, 551);
+            this.btn_Delete.Name = "btn_Delete";
+            this.btn_Delete.Size = new System.Drawing.Size(98, 23);
+            this.btn_Delete.TabIndex = 30;
+            this.btn_Delete.Text = "Delete";
+            this.btn_Delete.UseVisualStyleBackColor = true;
+            this.btn_Delete.Click += new System.EventHandler(this.button4_Click);
             // 
             // label8
             // 
@@ -385,17 +439,17 @@ namespace EmulatioStation_cfg_Editor
             // 
             this.rTxtBx_SystemPreview.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.rTxtBx_SystemPreview.Location = new System.Drawing.Point(514, 217);
+            this.rTxtBx_SystemPreview.Location = new System.Drawing.Point(511, 217);
             this.rTxtBx_SystemPreview.Name = "rTxtBx_SystemPreview";
             this.rTxtBx_SystemPreview.ReadOnly = true;
-            this.rTxtBx_SystemPreview.Size = new System.Drawing.Size(342, 293);
+            this.rTxtBx_SystemPreview.Size = new System.Drawing.Size(308, 293);
             this.rTxtBx_SystemPreview.TabIndex = 28;
             this.rTxtBx_SystemPreview.Text = "";
             // 
             // btnSave
             // 
             this.btnSave.Enabled = false;
-            this.btnSave.Location = new System.Drawing.Point(724, 516);
+            this.btnSave.Location = new System.Drawing.Point(721, 516);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(98, 23);
             this.btnSave.TabIndex = 29;
@@ -410,7 +464,7 @@ namespace EmulatioStation_cfg_Editor
             // btnUpdate
             // 
             this.btnUpdate.Enabled = false;
-            this.btnUpdate.Location = new System.Drawing.Point(514, 516);
+            this.btnUpdate.Location = new System.Drawing.Point(511, 516);
             this.btnUpdate.Name = "btnUpdate";
             this.btnUpdate.Size = new System.Drawing.Size(98, 23);
             this.btnUpdate.TabIndex = 31;
@@ -422,12 +476,13 @@ namespace EmulatioStation_cfg_Editor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(868, 611);
+            this.ClientSize = new System.Drawing.Size(831, 611);
             this.Controls.Add(this.btnUpdate);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.rTxtBx_SystemPreview);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.btn_Delete);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -479,10 +534,14 @@ namespace EmulatioStation_cfg_Editor
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.RichTextBox rTxtBx_SystemPreview;
         private System.Windows.Forms.Button btnSave;
-        private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.Button btn_Delete;
         private System.Windows.Forms.ErrorProvider errorProvider1;
         private System.Windows.Forms.HelpProvider helpProvider1;
         private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.Button btn_movBottom;
+        private System.Windows.Forms.Button btn_movDown;
+        private System.Windows.Forms.Button btn_movUp;
+        private System.Windows.Forms.Button btn_movTop;
     }
 }
 
